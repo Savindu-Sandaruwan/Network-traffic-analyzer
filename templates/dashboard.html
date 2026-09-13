@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Traffic Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { text-align: center; }
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 10px;
+            padding: 20px;
+            flex: 1;
+            min-width: 300px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            text-align: left;
+            padding: 6px;
+            border-bottom: 1px solid #334155;
+        }
+        .TCP { color: #3B82F6; }
+        .UDP { color: #F97316; }
+        .ICMP { color: #EF4444; }
+        .ARP { color: #A855F7; }
+        .Other { color: #10B981; }
+        .alert-box {
+            background: #7f1d1d;
+            color: #fecaca;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        #totalCount {
+            font-size: 40px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌐 Network Traffic Dashboard</h1>
+    <div id="totalCount">0</div>
+    <p style="text-align:center;">Total Packets Captured</p>
+
+    <div class="container">
+        <div class="card">
+            <h3>Protocol Distribution</h3>
+            <canvas id="protocolChart"></canvas>
+        </div>
+
+        <div class="card">
+            <h3>⚠️ Alerts</h3>
+            <div id="alerts"><p>No alerts yet.</p></div>
+        </div>
+    </div>
+
+    <div class="card" style="max-width: 1200px; margin: 20px auto;">
+        <h3>Recent Packets</h3>
+        <table>
+            <thead>
+                <tr><th>Time</th><th>Protocol</th><th>Source</th><th>Destination</th><th>Size</th></tr>
+            </thead>
+            <tbody id="packetTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('protocolChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['TCP', 'UDP', 'ICMP', 'ARP', 'Other'],
+                datasets: [{
+                    label: 'Packets',
+                    data: [0, 0, 0, 0, 0],
+                    backgroundColor: ['#3B82F6', '#F97316', '#EF4444', '#A855F7', '#10B981']
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        function refreshData() {
+            fetch('/data')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('totalCount').innerText = data.stats.total;
+
+                    chart.data.datasets[0].data = [
+                        data.stats.TCP, data.stats.UDP, data.stats.ICMP,
+                        data.stats.ARP, data.stats.Other
+                    ];
+                    chart.update();
+
+                    const tbody = document.getElementById('packetTable');
+                    tbody.innerHTML = '';
+                    data.recent_packets.forEach(p => {
+                        const row = `<tr>
+                            <td>${p.timestamp}</td>
+                            <td class="${p.protocol}">${p.protocol}</td>
+                            <td>${p.src}</td>
+                            <td>${p.dst}</td>
+                            <td>${p.size} B</td>
+                        </tr>`;
+                        tbody.innerHTML += row;
+                    });
+
+                    const alertsDiv = document.getElementById('alerts');
+                    if (data.alerts.length === 0) {
+                        alertsDiv.innerHTML = '<p>No alerts yet.</p>';
+                    } else {
+                        alertsDiv.innerHTML = data.alerts.map(a => `<div class="alert-box">${a}</div>`).join('');
+                    }
+                });
+        }
+
+        setInterval(refreshData, 1000);
+        refreshData();
+    </script>
+</body>
+</html>

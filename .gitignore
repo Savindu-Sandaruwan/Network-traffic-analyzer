@@ -1,0 +1,5 @@
+venv/
+__pycache__/
+*.pyc
+captured_packets.csv
+traffic_chart.png
