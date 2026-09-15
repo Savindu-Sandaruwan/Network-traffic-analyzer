@@ -23,7 +23,10 @@ A real-time network packet sniffer and traffic analyzer built with Python and Sc
 
 ## Screenshots
 
-*(Add screenshots here — terminal output and dashboard)*
+![Project Screenshot](screenshot/1.png)
+![Project Screenshot](screenshot/2.png)
+![Project Screenshot](screenshot/3.png)
+
 
 ## How to Run
 
